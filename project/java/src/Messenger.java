@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.ArrayList;
+import java.io.IOException;
 
 /**
  * This class defines a simple embedded SQL utility class that is designed to
@@ -254,11 +255,15 @@ public class Messenger {
             System.out.println("---------");
             System.out.println("1. Create user");
             System.out.println("2. Log in");
+            System.out.println("3. Change Password");
+			System.out.println("4. Delete Account");
             System.out.println("9. < EXIT");
             String authorisedUser = null;
             switch (readChoice()){
                case 1: CreateUser(esql); break;
                case 2: authorisedUser = LogIn(esql); break;
+               case 3: ChangePassword(esql); break; 
+               case 4: DeleteAccount(esql); break;
                case 9: keepon = false; break;
                default : System.out.println("Unrecognized choice!"); break;
             }//end switch
@@ -269,13 +274,22 @@ public class Messenger {
                 System.out.println("---------");
                 System.out.println("1. Add to contact list");
                 System.out.println("2. Browse contact list");
-                System.out.println("3. Write a new message");
+                System.out.println("3. Remove contact");
+                System.out.println("4. Add to block list");
+                System.out.println("5. Browse block list");
+				System.out.println("6. Remove blocked contact");
+                System.out.println("7. Messages Menu");
                 System.out.println(".........................");
                 System.out.println("9. Log out");
                 switch (readChoice()){
-                   case 1: AddToContact(esql); break;
-                   case 2: ListContacts(esql); break;
-                   case 3: NewMessage(esql); break;
+                   case 1: AddToContact(esql, authorisedUser); break;
+                   case 2: ListContacts(esql, authorisedUser); break;
+                   case 3: RemoveContact(esql, authorisedUser); break;
+                   case 4: AddToBlock(esql, authorisedUser); break;
+                   case 5: ListBlocks(esql, authorisedUser); break;
+                   case 6: RemoveBlocked(esql, authorisedUser); break;
+                   case 7: MessageMenu(esql, authorisedUser); break;
+                   //case 3: NewMessage(esql); break;
                    case 9: usermenu = false; break;
                    default : System.out.println("Unrecognized choice!"); break;
                 }
@@ -375,29 +389,356 @@ public class Messenger {
       }
    }//end
 
-   public static void AddToContact(Messenger esql){
+/*
+=================================================================================================
+=================================================================================================
+=================================================================================================
+=================================================================================================
+BEGINNING OF IMPLEMENTATION
+*/
+
+   public String executeQueryString(String query) throws SQLException{
       // Your code goes here.
+      // ... just a string returning verision of executeQuery 
       // ...
-      // ...
+      Statement mystatement = this._connection.createStatement();
+      ResultSet myresultset = mystatement.executeQuery(query);
+      myresultset.next();
+      String returnValue = myresultset.getString("returnValue");
+      mystatement.close();
+      return returnValue;
    }//end
 
-   public static void ListContacts(Messenger esql){
+   public static void ChangePassword(Messenger esql){
       // Your code goes here.
+      // ... CASE 3 in initial menu
       // ...
-      // ...
+      try{
+      	  System.out.println("\nEnter login:");
+      	  String login = in.readLine();
+      	  System.out.println("\nEnter old password:");
+      	  String oldpass = in.readLine();
+      	  System.out.println("\nEnter new password:");
+      	  String newpass = in.readLine();
+      	  
+      	  String query = String.format("SELECT ", login, oldpass, newpass);
+      	  String returnval = esql.executeQueryString(query);
+      	  
+      	  if(returnval.isEmpty()){
+      	  	  System.out.println("Password changed successfully\n");
+      	  }
+      	  
+      	  else
+      	  	  System.out.println(returnval);
+      	}
+      	catch(Exception e){
+      		System.out.println(e.getMessage());
+      		}
    }//end
 
-   public static void NewMessage(Messenger esql){
+
+   public static void DeleteAccount(Messenger esql){
       // Your code goes here.
+      // ... CASE 4 in initial menu
       // ...
+       try{
+      	  System.out.println("\nYOU ARE ABOUT TO DELETE YOUR ACCOUNT");
+      	  System.out.println("\nEnter login:");
+      	  String login = in.readLine();
+      	  System.out.println("\nEnter password:");
+      	  String password = in.readLine();
+      	  
+      	  String query = String.format("SELECT ", login, password);
+      	  String returnval = esql.executeQueryString(query);
+      	  
+      	  if(returnval.isEmpty()){
+      	  	  System.out.println("ARE YOU SURE YOU WANT TO DELETE THIS ACCOUNT ('yes' or 'no')\n");
+      	  	  String action = in.readLine();
+      	  	  String yes = "yes";
+      	  	  if(action == yes){
+				System.out.println("DELETING ACCOUNT\n");
+				String delQuery = String.format("DELETE FROM USR WHERE login = '%s'");
+      	  	  }
+      	  	  else
+      	  	  	  System.out.println("Account was not deleted...Returning to main menu");
+      	  }
+      	  else
+      	  	  System.out.println(returnval);
+      	}
+      	catch(Exception e){
+      		System.out.println(e.getMessage());
+      		}
+ 
+   }//end
+
+   public static void AddToContact(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 1 in login menu
       // ...
+      try{
+      	  String personAdding = user;
+      	  System.out.println("Enter Contacts Name\n");
+      	  String personAdded = in.readLine();
+      	  
+      	  String query = String.format("SELECT ", personAdding, personAdded);
+      	  String returnval = esql.executeQueryString(query);
+      	  
+      	  if(returnval.isEmpty()){
+      	  	  System.out.println("Request Sent");
+      	  }
+      	  else
+      	  	  System.out.println(returnval);
+	  }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+   }//end
+
+   public static void ListContacts(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 2 in login menu
+      // ...
+      try{
+      	  String personBrowsing = user;
+      	  System.out.println("Listing contacts...\n");
+      	  
+      	  String query = String.format("SELECT ", personBrowsing);
+      	  int rowCount = esql.executeQueryAndPrintResult(query);
+
+      	  if(rowCount == 0){
+      	  	  System.out.println("No contacts\n");
+      	  }
+      }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+   }//end
+
+   public static void RemoveContact(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 3 in login menu
+      // ...
+      System.out.println("Enter User you wish to remove\n");
+      try{
+      	  String personRemoving = user;
+      	  System.out.println("Enter Contacts Name\n");
+      	  String personRemoved = in.readLine();
+      	  
+      	  String query = String.format("SELECT ", personRemoving, personRemoved);
+      	  String returnval = esql.executeQueryString(query);
+      	  
+      	  if(returnval.isEmtpy()){
+      	  	  System outputmsg = String.format("Removed %s", personRemoved);
+      	  	  System.out.println(outputmsg);
+      	  }
+      	  else
+      	  	  System.out.println(returnval);
+	  }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+   }//end
+
+   public static void AddToBlock(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 4 in login menu
+      // ...
+      try{
+      	  String personBlocking = user;
+      	  System.out.println("Enter User you wish to block\n");
+      	  String personBlocked = in.readLine();
+      	  
+      	  String query = String.format("SELECT ", personBlocking, personBlocked);
+      	  String returnval = esql.executeQueryString(query);
+      	  
+      	  if(returnval.isEmtpy()){
+      	  	  System.out.println("Request Sent");
+      	  }
+      	  else
+      	  	  System.out.println(returnval);
+	  }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+   }//end
+
+   public static void ListBlocks(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 5 in login menu
+      // ...
+      try{
+      	  String personBrowsing = user;
+      	  System.out.println("Listing blocked contacts...\n");
+      	  
+      	  String query = String.format("SELECT ", personBrowsing);
+      	  int rowCount = esql.executeQueryAndPrintResult(query);
+
+      	  if(rowCount == 0){
+      	  	  System.out.println("No contacts\n");
+      	  }
+      }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+   }//end
+
+   public static void RemoveBlocked(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 6 in login menu
+      // ...
+      System.out.println("Enter User you wish to remove\n");
+      try{
+      	  String personUnblocking = user;
+      	  System.out.println("Enter Contacts Name\n");
+      	  String personUnblocked = in.readLine();
+      	  
+      	  String query = String.format("SELECT ", personUnblocking, personUnblocked);
+      	  String returnval = esql.executeQueryString(query);
+      	  
+      	  if(returnval.isEmtpy()){
+      	  	  System.out.println("Unblocked");
+      	  }
+      	  else
+      	  	  System.out.println(returnval);
+	  }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+   }//end
+
+   public static void MessageMenu(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 7 in login menu
+      // ...
+      try{
+      	  boolean stillView = true;
+      	  String personViewing = user; 
+      	  while(stillView){
+      	  	  System.out.println("Message Main Menu\n");
+      	  	  System.out.println("_________________\n");
+      	  	  System.out.println("1. Write New Message");
+      	  	  System.out.println("2. Edit Messages");
+      	  	  System.out.println("3. Delete Messages");
+      	  	  System.out.println("4. View my Chats");
+      	  	  System.out.println("9. Back to main menu");
+      	  	  
+      	  	  switch(readChoice()){
+      	  	  	  case 1: break;
+      	  	  	  case 2: break;
+      	  	  	  case 3: break;
+      	  	  	  case 9: stillView = false; break;
+      	  	  	  default : System.out.println("Unrecognized choice!"); break;
+      	  	  	  }
+      	 }
+   	  }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+
+   }//end
+
+
+   public static void NewMessage(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 1 in message menu
+      // ...
+      try{
+      	  String author = user;
+      	  System.out.println("Enter recipiants");
+      	  String recipiants = in.readLine();
+      	  //make recipiants with a ; delimiter in query? and as user is entering
+      	  //if they want multiple recipiants?
+      	  System.out.println("Enter your message... ");
+      	  String text;
+      	  String totaltext;
+
+      	  boolean takeInput = true;
+      	  while(takeInput == true){
+      	  	  text = in.readLine();
+      	  	  totaltext = totaltext + text + "\n";
+      	  	  if(text.equals("exit")){
+      	  	  	  takeInput = false;
+      	  	  }
+      	  }
+      	  
+      	  String query = String.format("Select ", author, recipiants, totaltext);
+      	  int rowCount = executeQuery(query);
+      	  System.out.println("Message sent");
+      	  if(rowCount > 0){
+      	  	  System.out.println("Error sending message");
+      	  }
+
+      }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
    }//end 
 
-
-   public static void Query6(Messenger esql){
+   public static void EditMessage(Messenger esql, String user){
       // Your code goes here.
+      // ... CASE 2 in message menu
       // ...
-      // ...
-   }//end Query6
+      try{
+      	  String editer = user;
+      	  System.out.println("Edit last message in which chat...\n");
+      	  //user enters the chat id of the chat where he wants to edit latest of his messages
+      	  String whichchat = in.readLine();
+      	  System.out.println("Edit your message:");
+      	  //user enters new message which will be edited from scratch
+      	  String newmsg = in.readLine();
 
+      	  System.out.println("Changing message...");
+      	  String query = String.format("DELETE ", deleter, whichchat, newmsg);
+      	  String editquery = esql.executeQueryString(query);
+      }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+
+   }//end 
+
+   public static void DeleteMessage(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 3 in message menu
+      // ...
+      try{
+      	  String deleter = user;
+      	  System.out.println("Delete last message in which chat...\n");
+      	  //user enters the chat id of the chat where he wants to delete his last message
+      	  String whichchat = in.readLine();
+
+      	  System.out.println("Deleting message...");
+      	  String query = String.format("DELETE ", deleter, whichchat);
+      	  String delquery = esql.executeQueryString(query);
+      }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+   }//end 
+
+   public static void ViewChats(Messenger esql, String user){
+      // Your code goes here.
+      // ... CASE 4 in message menu
+      // ...
+      try{
+      	  //printing last 10 messages from each chat
+      	  String chatviewer = user;
+      	  String query = String.format("SELECT");
+      	  int last10 = esql.executeQueryAndPrintResult(query);
+      	  if(last10 == 0){
+      	  	  System.out.println("None\n");
+      	  }
+      }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+
+   }//end 
+/*
+=================================================================================================
+=================================================================================================
+=================================================================================================
+=================================================================================================
+END OF IMPLEMENTATION
+*/
 }//end Messenger
