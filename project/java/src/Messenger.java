@@ -24,6 +24,8 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.ArrayList;
 import java.io.IOException;
+import java.lang.Integer;
+import java.io.Console;
 
 /**
  * This class defines a simple embedded SQL utility class that is designed to
@@ -85,6 +87,31 @@ public class Messenger {
       stmt.close ();
    }//end executeUpdate
 
+/*
+  public String executeQueryString(String query) throws SQLException{
+      // Your code goes here.
+      // ... just a string returning verision of executeQuery 
+      // ...
+      Statement mystatement = this._connection.createStatement();
+      ResultSet myresultset = mystatement.executeQuery(query);
+      myresultset.next();
+      String returnValue = myresultset.getString("returnValue");
+      mystatement.close();
+      return returnValue;
+   }//end*/
+   
+   public String executeQueryString (String query) throws SQLException {
+		// creates a statement object
+		Statement stmt = this._connection.createStatement();
+
+		// issues the query instruction
+		ResultSet rs = stmt.executeQuery(query);
+		rs.next();
+		String retVal = rs.getString(1);
+		stmt.close();
+		return retVal;
+	}
+   
    /**
     * Method to execute an input query SQL instruction (i.e. SELECT).  This
     * method issues the query to the DBMS and outputs the results to
@@ -94,7 +121,7 @@ public class Messenger {
     * @return the number of rows returned
     * @throws java.sql.SQLException when failed to execute the query
     */
-   public int executeQueryAndPrintResult (String query) throws SQLException {
+   public int executeQueryAndPrintResult (String query, boolean outputHeader) throws SQLException {
       // creates a statement object
       Statement stmt = this._connection.createStatement ();
 
@@ -110,7 +137,6 @@ public class Messenger {
       int rowCount = 0;
 
       // iterates through the result set and output them to standard out.
-      boolean outputHeader = true;
       while (rs.next()){
 	 if(outputHeader){
 	    for(int i = 1; i <= numCol; i++){
@@ -256,14 +282,14 @@ public class Messenger {
             System.out.println("1. Create user");
             System.out.println("2. Log in");
             System.out.println("3. Change Password");
-			System.out.println("4. Delete Account");
+			//System.out.println("4. Delete Account");
             System.out.println("9. < EXIT");
             String authorisedUser = null;
             switch (readChoice()){
                case 1: CreateUser(esql); break;
                case 2: authorisedUser = LogIn(esql); break;
                case 3: ChangePassword(esql); break; 
-               case 4: DeleteAccount(esql); break;
+              // case 4: DeleteAccount(esql); break;
                case 9: keepon = false; break;
                default : System.out.println("Unrecognized choice!"); break;
             }//end switch
@@ -279,6 +305,7 @@ public class Messenger {
                 System.out.println("5. Browse block list");
 				System.out.println("6. Remove blocked contact");
                 System.out.println("7. Messages Menu");
+                System.out.println("8. Delete Account");
                 System.out.println(".........................");
                 System.out.println("9. Log out");
                 switch (readChoice()){
@@ -288,7 +315,8 @@ public class Messenger {
                    case 4: AddToBlock(esql, authorisedUser); break;
                    case 5: ListBlocks(esql, authorisedUser); break;
                    case 6: RemoveBlocked(esql, authorisedUser); break;
-                   case 7: MessageMenu(esql, authorisedUser); break;
+                   //case 7: MessageMenu(esql, authorisedUser); break;
+                   case 8: DeleteAccount(esql, authorisedUser); break;
                    //case 3: NewMessage(esql); break;
                    case 9: usermenu = false; break;
                    default : System.out.println("Unrecognized choice!"); break;
@@ -376,8 +404,12 @@ public class Messenger {
          System.out.print("\tEnter user login: ");
          String login = in.readLine();
          System.out.print("\tEnter user password: ");
-         String password = in.readLine();
-
+         //String password = in.readLine();
+         Console cnsl = null;
+         cnsl = System.console();
+         char[] passString = cnsl.readPassword();
+		 String password = new String(passString);
+		 
          String query = String.format("SELECT * FROM Usr WHERE login = '%s' AND password = '%s'", login, password);
          int userNum = esql.executeQuery(query);
 	 if (userNum > 0)
@@ -397,18 +429,6 @@ public class Messenger {
 BEGINNING OF IMPLEMENTATION
 */
 
-   public String executeQueryString(String query) throws SQLException{
-      // Your code goes here.
-      // ... just a string returning verision of executeQuery 
-      // ...
-      Statement mystatement = this._connection.createStatement();
-      ResultSet myresultset = mystatement.executeQuery(query);
-      myresultset.next();
-      String returnValue = myresultset.getString("returnValue");
-      mystatement.close();
-      return returnValue;
-   }//end
-
    public static void ChangePassword(Messenger esql){
       // Your code goes here.
       // ... CASE 3 in initial menu
@@ -417,27 +437,32 @@ BEGINNING OF IMPLEMENTATION
       	  System.out.println("\nEnter login:");
       	  String login = in.readLine();
       	  System.out.println("\nEnter old password:");
-      	  String oldpass = in.readLine();
+      	  Console cnsl = null;
+          cnsl = System.console();
+          char[] passString = cnsl.readPassword();
+		  String oldpass = new String(passString);
+      	  //String oldpass = in.readLine();
       	  System.out.println("\nEnter new password:");
-      	  String newpass = in.readLine();
-      	  
-      	  String query = String.format("SELECT ", login, oldpass, newpass);
-      	  String returnval = esql.executeQueryString(query);
-      	  
-      	  if(returnval.isEmpty()){
-      	  	  System.out.println("Password changed successfully\n");
-      	  }
-      	  
-      	  else
-      	  	  System.out.println(returnval);
+      	 // String newpass = in.readLine();
+      	  Console cnsl1 = null;
+	      cnsl1 = System.console();
+          char[] passString1 = cnsl1.readPassword();
+		  String newpass = new String(passString1);
+		  
+		  System.out.println(oldpass + " " + newpass + " " + login);
+		  
+		  
+      	  String query = String.format("update usr set password = '%s' where login = '%s' and password = '%s'", newpass, login, oldpass);
+      	  esql.executeUpdate(query);
+      	  System.out.println("Password changed successfully\n");
       	}
       	catch(Exception e){
       		System.out.println(e.getMessage());
       		}
    }//end
 
-
-   public static void DeleteAccount(Messenger esql){
+	//FIX ME
+   public static void DeleteAccount(Messenger esql, String user){
       // Your code goes here.
       // ... CASE 4 in initial menu
       // ...
@@ -448,7 +473,7 @@ BEGINNING OF IMPLEMENTATION
       	  System.out.println("\nEnter password:");
       	  String password = in.readLine();
       	  
-      	  String query = String.format("SELECT ", login, password);
+      	  String query = String.format("select count(1) from usr where login = '%s' and password = '%s'", login, password);
       	  String returnval = esql.executeQueryString(query);
       	  
       	  if(returnval.isEmpty()){
@@ -476,19 +501,39 @@ BEGINNING OF IMPLEMENTATION
       // ... CASE 1 in login menu
       // ...
       try{
+		  System.out.print("\033[H\033[2J");
+		  System.out.flush();
       	  String personAdding = user;
       	  System.out.println("Enter Contacts Name\n");
       	  String personAdded = in.readLine();
       	  
-      	  String query = String.format("SELECT ", personAdding, personAdded);
-      	  String returnval = esql.executeQueryString(query);
-      	  
-      	  if(returnval.isEmpty()){
-      	  	  System.out.println("Request Sent");
-      	  }
-      	  else
-      	  	  System.out.println(returnval);
-	  }
+		  String check = String.format("select count(1) from usr where login = '%s'", personAdded);
+          String ret = esql.executeQueryString(check);
+		  System.out.println(ret + personAdded);
+		  
+		  int i = Integer.parseInt(ret);
+		  
+          if (i > 0){
+                 System.out.println(ret);
+      	        String query = String.format("select count(c.list_member) from usr a, user_list b, user_list_contains c where a.contact_list = b.list_id and b.list_id = c.list_id and c.list_member = '%s' and a.login = '%s';", personAdded, personAdding);
+      	        String val = esql.executeQueryString(query);
+		         System.out.println(val);
+		         int c = Integer.parseInt(val);
+				if (c < 1){
+					String blocked_id = String.format("select contact_list from usr where login = '%s'", personAdding);
+					String return_val =  esql.executeQueryString(blocked_id);
+					
+					String insert = String.format("insert into user_list_contains (list_id, list_member) values(%s, '%s')", return_val, personAdded);
+					esql.executeUpdate(insert);
+				}
+				else{
+					System.out.println("User Login Provided is already Added");
+				}
+		  }
+          else {
+              System.out.println("User Login Provided Does not Exist");
+          }
+      }
 	  catch(Exception e){
 	  	  System.err.println(e.getMessage());
 	  }
@@ -499,12 +544,15 @@ BEGINNING OF IMPLEMENTATION
       // ... CASE 2 in login menu
       // ...
       try{
+		  System.out.print("\033[H\033[2J");
+		  System.out.flush();
       	  String personBrowsing = user;
       	  System.out.println("Listing contacts...\n");
       	  
-      	  String query = String.format("SELECT ", personBrowsing);
-      	  int rowCount = esql.executeQueryAndPrintResult(query);
-
+      	  String query = String.format("select a.list_member as Contact from user_list_contains a, usr b, user_list c where b.contact_list = c.list_id and upper(c.list_type) = 'CONTACT' and  c.list_id = a.list_id and b.login = '%s'", personBrowsing);
+      	  int rowCount = esql.executeQueryAndPrintResult(query, false);
+		  System.out.println("\n");
+		  System.out.println("\n");
       	  if(rowCount == 0){
       	  	  System.out.println("No contacts\n");
       	  }
@@ -518,21 +566,29 @@ BEGINNING OF IMPLEMENTATION
       // Your code goes here.
       // ... CASE 3 in login menu
       // ...
-      System.out.println("Enter User you wish to remove\n");
+      
       try{
+		  System.out.print("\033[H\033[2J");
+		  System.out.flush();
       	  String personRemoving = user;
-      	  System.out.println("Enter Contacts Name\n");
+      	  System.out.println("Enter Contact Name\n");
       	  String personRemoved = in.readLine();
       	  
-      	  String query = String.format("SELECT ", personRemoving, personRemoved);
-      	  String returnval = esql.executeQueryString(query);
+      	  String check = String.format("select count(a.list_member) from user_list_contains a, usr b where b.contact_list = a.list_id and b.login = '%s' and a.list_member = '%s'", personRemoving, personRemoved);
+      	  String val = esql.executeQueryString(check);
       	  
-      	  if(returnval.isEmtpy()){
-      	  	  System outputmsg = String.format("Removed %s", personRemoved);
-      	  	  System.out.println(outputmsg);
+      	  int i = Integer.parseInt(val);
+      	  
+      	  if (i > 0) {
+				String query = String.format("delete from user_list_contains where list_id = (select contact_list from usr where login = '%s') and list_member = '%s'", personRemoving, personRemoved);
+				esql.executeUpdate(query);
+				String out = String.format(" %s Was Removed", personRemoved);
+				System.out.println(out);
       	  }
-      	  else
-      	  	  System.out.println(returnval);
+      	  else{
+      	  	  String out = String.format("User %s does not exist in contact list", personRemoved);
+      	  	  System.out.println(out);
+      	 }
 	  }
 	  catch(Exception e){
 	  	  System.err.println(e.getMessage());
@@ -544,19 +600,39 @@ BEGINNING OF IMPLEMENTATION
       // ... CASE 4 in login menu
       // ...
       try{
+		  System.out.print("\033[H\033[2J");
+		  System.out.flush();
       	  String personBlocking = user;
       	  System.out.println("Enter User you wish to block\n");
       	  String personBlocked = in.readLine();
       	  
-      	  String query = String.format("SELECT ", personBlocking, personBlocked);
-      	  String returnval = esql.executeQueryString(query);
-      	  
-      	  if(returnval.isEmtpy()){
-      	  	  System.out.println("Request Sent");
-      	  }
-      	  else
-      	  	  System.out.println(returnval);
-	  }
+      	  String check = String.format("select count(1) from usr where login = '%s'", personBlocked);
+          String ret = esql.executeQueryString(check);
+		  System.out.println(ret + personBlocked);
+		  
+		  int i = Integer.parseInt(ret);
+		  
+          if (i > 0){
+                 System.out.println(ret);
+      	        String query = String.format("select count(c.list_member) from usr a, user_list b, user_list_contains c where a.block_list = b.list_id and b.list_id = c.list_id and c.list_member = '%s' and a.login = '%s';", personBlocked, personBlocking);
+      	        String val = esql.executeQueryString(query);
+		         System.out.println(val);
+		         int c = Integer.parseInt(val);
+				if (c < 1){
+					String blocked_id = String.format("select block_list from usr where login = '%s'", personBlocking);
+					String return_val =  esql.executeQueryString(blocked_id);
+					
+					String insert = String.format("insert into user_list_contains (list_id, list_member) values(%s, '%s')", return_val, personBlocked);
+					esql.executeUpdate(insert);
+				}
+				else{
+					System.out.println("User Login Provided is already blocked");
+				}
+		  }
+          else {
+              System.out.println("User Login Provided Does not Exist");
+          }
+      }
 	  catch(Exception e){
 	  	  System.err.println(e.getMessage());
 	  }
@@ -567,12 +643,15 @@ BEGINNING OF IMPLEMENTATION
       // ... CASE 5 in login menu
       // ...
       try{
+		  System.out.print("\033[H\033[2J");
+		  System.out.flush();
       	  String personBrowsing = user;
       	  System.out.println("Listing blocked contacts...\n");
       	  
-      	  String query = String.format("SELECT ", personBrowsing);
-      	  int rowCount = esql.executeQueryAndPrintResult(query);
-
+      	  String query = String.format("select a.list_member from user_list_contains a, usr b, user_list c where b.block_list = c.list_id and upper(c.list_type) = 'BLOCK' and  c.list_id = a.list_id and b.login = '%s'", personBrowsing);
+      	  int rowCount = esql.executeQueryAndPrintResult(query, false);
+		  System.out.println("\n");
+		  System.out.println("\n");
       	  if(rowCount == 0){
       	  	  System.out.println("No contacts\n");
       	  }
@@ -588,25 +667,33 @@ BEGINNING OF IMPLEMENTATION
       // ...
       System.out.println("Enter User you wish to remove\n");
       try{
+		  System.out.print("\033[H\033[2J");
+		  System.out.flush();
       	  String personUnblocking = user;
       	  System.out.println("Enter Contacts Name\n");
       	  String personUnblocked = in.readLine();
       	  
-      	  String query = String.format("SELECT ", personUnblocking, personUnblocked);
-      	  String returnval = esql.executeQueryString(query);
-      	  
-      	  if(returnval.isEmtpy()){
-      	  	  System.out.println("Unblocked");
+      	  String check = String.format("select count(a.list_member) from user_list_contains a, usr b where b.block_list = a.list_id and b.login = '%s' and a.list_member = '%s'", personUnblocking, personUnblocked);
+      	  String val = esql.executeQueryString(check);
+      	  int i = Integer.parseInt(val);
+      	  if (i > 0) {
+				String query = String.format("delete from user_list_contains where list_id = (select block_list from usr where login = '%s') and list_member = '%s'", personUnblocking, personUnblocked);
+				esql.executeUpdate(query);
+				String out = String.format(" %s Was Unblocked", personUnblocked);
+				System.out.println(out);
       	  }
-      	  else
-      	  	  System.out.println(returnval);
+      	  else{
+      	  	  
+      	  	  String out = String.format("User %s does not exist in blocked list", personUnblocked);
+      	  	  System.out.println(out);
+      	 }
 	  }
 	  catch(Exception e){
 	  	  System.err.println(e.getMessage());
 	  }
    }//end
 
-   public static void MessageMenu(Messenger esql, String user){
+  /* public static void MessageMenu(Messenger esql, String user){
       // Your code goes here.
       // ... CASE 7 in login menu
       // ...
@@ -733,7 +820,7 @@ BEGINNING OF IMPLEMENTATION
 	  	  System.err.println(e.getMessage());
 	  }
 
-   }//end 
+   }//end */
 /*
 =================================================================================================
 =================================================================================================
