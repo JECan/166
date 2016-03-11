@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.io.IOException;
 import java.lang.Integer;
 import java.io.Console;
+import java.util.Vector;
+import java.io.DataInputStream;
 
 /**
  * This class defines a simple embedded SQL utility class that is designed to
@@ -41,7 +43,45 @@ public class Messenger {
    // This variable can be global for convenience.
    static BufferedReader in = new BufferedReader(
                                 new InputStreamReader(System.in));
+    public class message{
+        public int id = 0;
+        public int mId = 0;
+        public int cId = 0;
+        public String msg = "";
+        public String sender = "";
+        public String date = "";
 
+        public message(int i, int cid, int mid, String m, String s, String d){
+            id = i;
+            mId = mid;
+            cId = cid;
+            msg = m;
+            sender = s;
+            date = d;
+        }
+    }
+    
+    public class chat{
+        public int id = 0;
+        public int chat_id = 0;
+        public int msg_id = 0;
+        public String msg = "";
+        public String chat_type = "";
+        public String sender = "";
+        public String date = "";
+        public String init = "";
+
+        public chat(int i, int cid, int mid, String m, String cType, String s, String d, String start){
+            id = i;
+            chat_id = cid;
+            msg_id = mid;
+            msg = m;
+            chat_type = cType;
+            sender = s;
+            date = d;
+            init = start;
+        }
+    }
    /**
     * Creates a new instance of Messenger
     *
@@ -148,6 +188,94 @@ public class Messenger {
          for (int i=1; i<=numCol; ++i)
             System.out.print (rs.getString (i) + "\t");
          System.out.println ();
+         ++rowCount;
+      }//end while
+      stmt.close ();
+      return rowCount;
+   }//end executeQuery
+   
+   
+   
+   public int get_chat (String query, Vector<chat> list) throws SQLException {
+      // creates a statement object
+      Statement stmt = this._connection.createStatement ();
+
+      // issues the query instruction
+      ResultSet rs = stmt.executeQuery (query);
+
+      /*
+       ** obtains the metadata object for the returned result set.  The metadata
+       ** contains row and column info.
+       */
+      ResultSetMetaData rsmd = rs.getMetaData ();
+      int numCol = rsmd.getColumnCount ();
+      int rowCount = 0;
+      int id = 0;
+      int cid = 0;
+      int mid = 0;
+      String msg;
+      String cType;
+      String s;
+      String d;
+      String init;
+
+      // iterates through the result set and output them to standard out.
+      while (rs.next()){
+         id = rowCount;
+         cType = rs.getString (1);
+         cid = Integer.parseInt(rs.getString (2));
+         mid = Integer.parseInt(rs.getString (3));
+         msg = rs.getString (4);
+         d = rs.getString (5);
+         s = rs.getString (6);
+         init = rs.getString (7);
+         
+		 chat c1 = new chat(id, cid, mid, msg, cType, s, d, init);	
+            list.addElement(c1);
+            //System.out.print (rs.getString (i) + "\t");
+         //System.out.println ();
+         ++rowCount;
+      }//end while
+      stmt.close ();
+      return rowCount;
+   }//end executeQuery
+   
+   
+   
+   public int get_message(String query, Vector<message> list) throws SQLException {
+      // creates a statement object
+      Statement stmt = this._connection.createStatement ();
+
+      // issues the query instruction
+      ResultSet rs = stmt.executeQuery (query);
+
+      /*
+       ** obtains the metadata object for the returned result set.  The metadata
+       ** contains row and column info.
+       */
+      ResultSetMetaData rsmd = rs.getMetaData ();
+      int numCol = rsmd.getColumnCount ();
+      int rowCount = 0;
+      int id = 0;
+      int cid = 0;
+      int mid = 0;
+      String msg;
+      String sender;
+      String d;
+
+      // iterates through the result set and output them to standard out.
+      while (rs.next()){
+         id = rowCount;
+         cid = Integer.parseInt(rs.getString (1));
+         mid = Integer.parseInt(rs.getString (2));
+         msg = rs.getString (3);
+         d = rs.getString (4);
+         sender = rs.getString (5);
+         
+		 message c1 = new message(id, cid, mid, msg, sender, d);	
+            list.addElement(c1);
+            //System.out.print (rs.getString (i) + "\t");
+         //System.out.println ();
          ++rowCount;
       }//end while
       stmt.close ();
@@ -304,7 +432,7 @@ public class Messenger {
                 System.out.println("4. Add to block list");
                 System.out.println("5. Browse block list");
 				System.out.println("6. Remove blocked contact");
-                System.out.println("7. Messages Menu");
+                System.out.println("7. Message Menu");
                 System.out.println("8. Delete Account");
                 System.out.println(".........................");
                 System.out.println("9. Log out");
@@ -315,7 +443,7 @@ public class Messenger {
                    case 4: AddToBlock(esql, authorisedUser); break;
                    case 5: ListBlocks(esql, authorisedUser); break;
                    case 6: RemoveBlocked(esql, authorisedUser); break;
-                   //case 7: MessageMenu(esql, authorisedUser); break;
+                   case 7: MessageMenu(esql, authorisedUser); break;
                    case 8: DeleteAccount(esql, authorisedUser); break;
                    //case 3: NewMessage(esql); break;
                    case 9: usermenu = false; break;
@@ -358,6 +486,45 @@ public class Messenger {
          System.out.print("Please make your choice: ");
          try { // read the integer, parse it and break.
             input = Integer.parseInt(in.readLine());
+            break;
+         }catch (Exception e) {
+            System.out.println("Your input is invalid!");
+            continue;
+         }//end try
+      }while (true);
+      return input;
+   }//end readChoice
+   
+      public static int readChatNum() {
+      int input;
+      // returns only if a correct value is given.
+      do {
+         System.out.print("Enter Chat #: ");
+         try { // read the integer, parse it and break.
+            input = Integer.parseInt(in.readLine());
+            if (input > 9){
+				System.out.println("Your input needs to be from 0-9");
+				continue;
+			}
+			else
+				break;
+         }catch (Exception e) {
+            System.out.println("Your input is invalid!");
+            continue;
+         }//end try
+      }while (true);
+      return input;
+   }//end readChoice
+   
+   public static char readchar() {
+      char input;
+      String input1;
+      // returns only if a correct value is given.
+      do {
+         System.out.print("Please make your choice: ");
+         try { // read the integer, parse it and break.
+            input1 = in.readLine(); 
+            input = input1.charAt(0);
             break;
          }catch (Exception e) {
             System.out.println("Your input is invalid!");
@@ -693,7 +860,7 @@ BEGINNING OF IMPLEMENTATION
 	  }
    }//end
 
-  /* public static void MessageMenu(Messenger esql, String user){
+   public static void MessageMenu(Messenger esql, String user){
       // Your code goes here.
       // ... CASE 7 in login menu
       // ...
@@ -701,18 +868,17 @@ BEGINNING OF IMPLEMENTATION
       	  boolean stillView = true;
       	  String personViewing = user; 
       	  while(stillView){
+			  System.out.print("\033[H\033[2J");
+		      System.out.flush(); 
       	  	  System.out.println("Message Main Menu\n");
       	  	  System.out.println("_________________\n");
-      	  	  System.out.println("1. Write New Message");
-      	  	  System.out.println("2. Edit Messages");
-      	  	  System.out.println("3. Delete Messages");
-      	  	  System.out.println("4. View my Chats");
+      	  	  System.out.println("1. View My Chats");
+      	  	  System.out.println("2. Create Chat");
       	  	  System.out.println("9. Back to main menu");
       	  	  
       	  	  switch(readChoice()){
-      	  	  	  case 1: break;
+      	  	  	  case 1: ViewChats(esql, user); break;
       	  	  	  case 2: break;
-      	  	  	  case 3: break;
       	  	  	  case 9: stillView = false; break;
       	  	  	  default : System.out.println("Unrecognized choice!"); break;
       	  	  	  }
@@ -723,86 +889,69 @@ BEGINNING OF IMPLEMENTATION
 	  }
 
    }//end
-
-
-   public static void NewMessage(Messenger esql, String user){
-      // Your code goes here.
-      // ... CASE 1 in message menu
-      // ...
-      try{
-      	  String author = user;
-      	  System.out.println("Enter recipiants");
-      	  String recipiants = in.readLine();
-      	  //make recipiants with a ; delimiter in query? and as user is entering
-      	  //if they want multiple recipiants?
-      	  System.out.println("Enter your message... ");
-      	  String text;
-      	  String totaltext;
-
-      	  boolean takeInput = true;
-      	  while(takeInput == true){
-      	  	  text = in.readLine();
-      	  	  totaltext = totaltext + text + "\n";
-      	  	  if(text.equals("exit")){
-      	  	  	  takeInput = false;
-      	  	  }
-      	  }
-      	  
-      	  String query = String.format("Select ", author, recipiants, totaltext);
-      	  int rowCount = executeQuery(query);
-      	  System.out.println("Message sent");
-      	  if(rowCount > 0){
-      	  	  System.out.println("Error sending message");
-      	  }
-
-      }
-	  catch(Exception e){
-	  	  System.err.println(e.getMessage());
+   
+   public static void DeleteChat(Messenger esql, int chat_id, String user){
+	  try{
+		  String chatviewer = user;
+		  //String display;
+		  int Start = 0;
+		  String query = String.format("delete from chat where chat_id = %s and init_sender = '%s'", chat_id, chatviewer);
+		  esql.executeUpdate(query);
+		  System.out.println("Chat has been Deleted");
+	   }
+		catch(Exception e){
+			 System.err.println(e.getMessage());
+		} 
+   }
+   
+   public static void deleteChat(Vector<chat> list, Messenger esql, String user){
+	   try{
+	   int id = readChatNum();
+	   chat val = list.get(id);
+	   System.out.print("Are you sure you want to delete chat " + id + ": ");
+	   String confirmation = in.readLine();
+	   if(confirmation.equals("Yes") || confirmation.equals("yes")){
+		   if(user.equals(val.init)){
+				DeleteChat(esql, val.chat_id, val.init);
+		   }
+		   else{
+			   System.out.println("You cannot delete this chat because you are not the owner");
+			   System.out.println("The Owner is: " + val.init);
+			   //System.out.println("You are: " + val.init);
+		   }
+	   }
+	}
+	catch(Exception e){
+		 System.err.println(e.getMessage());
+	} 
+   }
+  
+   
+   public static void printChats(Vector<chat> list, int Start){
+	   String display;
+	   String header;
+	   int end;
+	   if((Start + 10) > list.size()) 
+			end = list.size();
+	   else
+			end = (Start + 10);
+			
+	   for(int i=Start; i < end; i++){
+			if (i ==0){
+				System.out.printf("%-106.106s%n", "************************************************************************************************************************************************************************");
+				System.out.printf("%-1.1s %-3.3s %-1.1s %-10.10s %-1.1s %-20.20s %-1.1s %-40.40s %-1.1s %-15.15s %3.3s%n", "*", " #", "*"," Chat Type","*", "    Last Sender","*","             Last Message","*","      Date","*");
+				System.out.printf("%-106.106s%n", "************************************************************************************************************************************************************************");
+				//System.out.println(header);
+			}
+			chat objs = list.get(i);
+			//display = String.format("  " + objs.id + "\t" + objs.chat_type + "\t" + objs.sender + "\t" + objs.msg + "\t" + objs.date + "\n");
+			//System.out.print(display);
+			//System.out.println();
+			System.out.printf("%-1.1s %-5.5s %-1.1s %-10.10s %-1.1s %-20.20s %-1.1s %-40.40s %-1.1s %-15.15s %-1.1s%n", " ", objs.id, " ", objs.chat_type, " ", objs.sender, " ", objs.msg + "...", " ", objs.date, " ");
 	  }
-   }//end 
-
-   public static void EditMessage(Messenger esql, String user){
-      // Your code goes here.
-      // ... CASE 2 in message menu
-      // ...
-      try{
-      	  String editer = user;
-      	  System.out.println("Edit last message in which chat...\n");
-      	  //user enters the chat id of the chat where he wants to edit latest of his messages
-      	  String whichchat = in.readLine();
-      	  System.out.println("Edit your message:");
-      	  //user enters new message which will be edited from scratch
-      	  String newmsg = in.readLine();
-
-      	  System.out.println("Changing message...");
-      	  String query = String.format("DELETE ", deleter, whichchat, newmsg);
-      	  String editquery = esql.executeQueryString(query);
-      }
-	  catch(Exception e){
-	  	  System.err.println(e.getMessage());
-	  }
-
-   }//end 
-
-   public static void DeleteMessage(Messenger esql, String user){
-      // Your code goes here.
-      // ... CASE 3 in message menu
-      // ...
-      try{
-      	  String deleter = user;
-      	  System.out.println("Delete last message in which chat...\n");
-      	  //user enters the chat id of the chat where he wants to delete his last message
-      	  String whichchat = in.readLine();
-
-      	  System.out.println("Deleting message...");
-      	  String query = String.format("DELETE ", deleter, whichchat);
-      	  String delquery = esql.executeQueryString(query);
-      }
-	  catch(Exception e){
-	  	  System.err.println(e.getMessage());
-	  }
-   }//end 
-
+   }
+   
+   
    public static void ViewChats(Messenger esql, String user){
       // Your code goes here.
       // ... CASE 4 in message menu
@@ -810,17 +959,179 @@ BEGINNING OF IMPLEMENTATION
       try{
       	  //printing last 10 messages from each chat
       	  String chatviewer = user;
-      	  String query = String.format("SELECT");
-      	  int last10 = esql.executeQueryAndPrintResult(query);
-      	  if(last10 == 0){
-      	  	  System.out.println("None\n");
-      	  }
+      	  Vector<chat> list = new Vector<chat>();
+      	  String display;
+      	  int Start = 0;
+      	  String query = String.format("select trim(both ' ' from c.chat_type) as type, c.chat_id, max(m.msg_id) as id, "+
+      	                                " trim(both ' ' from substring(m.msg_text, 1, 30)) as msg, trim(both ' ' from to_char(m.msg_timestamp, "+
+      	                                " 'MM/DD/YY HH12:MI')), trim(both ' ' from m.sender_login) as s, trim(both ' ' from c.init_sender) as sender from message m, chat c, chat_list cl "+
+      	                                "  where c.chat_id = m.chat_id and c.chat_id = cl.chat_id and cl.member = '%s' "+
+      	                                "  and msg_id in (select max(msg_id) from message "+
+      	                                "  where chat_id = c.chat_id) group by trim(both ' ' from c.chat_type),c.chat_id, "+
+      	                                "  trim(both ' ' from substring(m.msg_text, 1, 30)), trim(both ' ' from to_char(m.msg_timestamp,'MM/DD/YY HH12:MI')), "+
+      	                                "  trim(both ' ' from m.sender_login), trim(both ' ' from c.init_sender);", user);
+      	  int rowCount = esql.get_chat(query, list);
+      	  String header;
+      	  if (rowCount > 1){
+			  
+			  boolean stillView = true;
+      	   //String personViewing = user; 
+      	  while(stillView){
+			  printChats(list, Start);
+			  System.out.println("Please Select a Choice\n");
+      	  	  System.out.println("_________________\n");
+      	  	  if(rowCount > 10 && (list.size() - (Start+10) >= 1))
+				System.out.println("N. Next Page");
+			  if(Start > 10)	
+				System.out.println("P. Previous Page");
+      	  	  System.out.println("V. View Chat Messages");
+      	  	  System.out.println("M. View Chat Members");
+      	  	  System.out.println("C. Add Members to Chat");
+      	  	  System.out.println("A. Add Chat");
+      	  	  System.out.println("D. Delete Chat");
+      	  	  System.out.println("9. Back to Message Menu");
+      	  	  //System.out.println(readChoice());
+      	  	  switch(readchar()){
+      	  	  	  case 'N': Start = Start + 10; break;
+      	  	  	  case 'P': Start = Start - 10; break;
+      	  	  	  case 'M': break;
+      	  	  	  case 'C': break;
+      	  	  	  case 'V': getMessage(list, esql, user); break;
+      	  	  	  case 'D': deleteChat(list, esql, chatviewer); break;
+      	  	  	  case 'A': break;
+      	  	  	  case '9': stillView = false; break;
+      	  	  	  default : System.out.println("Unrecognized choice!"); break;
+      	  	  	  }
+			}
+		  }
+		  else{
+			  System.out.print("You Currently Have No Chats\n");
+		  }
       }
 	  catch(Exception e){
 	  	  System.err.println(e.getMessage());
 	  }
 
-   }//end */
+   }//end 
+   
+   
+  public static String[] splitStringEvery(String s, int interval) {
+    int arrayLength = (int) Math.ceil(((s.length() / (double)interval)));
+    String[] result = new String[arrayLength];
+
+    int j = 0;
+    int lastIndex = result.length - 1;
+    for (int i = 0; i < lastIndex; i++) {
+        result[i] = s.substring(j, j + interval);
+        j += interval;
+    } //Add the last bit
+    result[lastIndex] = s.substring(j);
+
+    return result;
+}
+   
+   
+   public static void printMessages(Vector<message> list, int Start){
+	   String display;
+	   String header;
+	   int end;
+	   
+	   String[] msg;
+	   
+	   if((Start + 10) > list.size()) 
+			end = list.size();
+	   else
+			end = (Start + 10);
+			
+	   for(int i=Start; i < end; i++){
+			if (i == Start){
+				System.out.printf("%-106.106s%n", "************************************************************************************************************************************************************************");
+				System.out.printf("%-1.1s %-3.3s %-1.1s %-20.20s %-1.1s %-15.15s %-1.1s %-40.40s %16.16s%n", "*", " #", "*","    Sender","*", "    Date","*","                  Message","*");
+				System.out.printf("%-106.106s%n", "************************************************************************************************************************************************************************");
+			}
+			message objs = list.get(i);
+			
+			int arrayLength = (int) Math.ceil(((objs.msg.length() / (double)40)));
+			msg = new String[arrayLength];
+			
+			msg = splitStringEvery(objs.msg, 40);
+			
+			System.out.printf("%-1.1s %-3.3s %-1.1s %-20.20s %-1.1s %-15.15s %1.1s"," ", objs.id, " ", objs.sender, " ", objs.date, " ");
+			System.out.printf("%46s%n",msg[0]);
+			for(int j = 1; j < msg.length; j++){
+				System.out.printf("%94s%n",msg[j]);
+			}
+			
+			//System.out.print(display);
+			//System.out.println();
+	  }
+   }
+   
+   public static void getMessage(Vector<chat> list, Messenger esql, String user){
+	   try{
+	   int id = readChatNum();
+	   chat val = list.get(id);
+	   ViewMessages(esql, user, val.chat_id);
+	}
+	catch(Exception e){
+		 System.err.println(e.getMessage());
+	} 
+   }
+   public static void ViewMessages(Messenger esql, String user, int chatID){
+      // Your code goes here.
+      // ... CASE 4 in message menu
+      // ...
+      try{
+      	  //printing last 10 messages from each chat
+      	  String chatviewer = user;
+      	  Vector<message> list = new Vector<message>();
+      	  String display;
+      	  int Start = 0;
+      	  String query = String.format("select c.chat_id, m.msg_id as id, "+
+      	                                "  trim(both ' ' from m.msg_text) as msg, trim(both ' ' from to_char(m.msg_timestamp, "+
+      	                                " 'MM/DD/YY HH12:MI')), trim(both ' ' from m.sender_login) as sender from message m, chat c "+
+      	                                "  where c.chat_id = m.chat_id and c.chat_id = %s"+
+      	                                "  order by trim(both ' ' from to_char(m.msg_timestamp,'MM/DD/YY HH12:MI')) desc", chatID);
+      	  int rowCount = esql.get_message(query, list);
+      	  String header;
+      	  if (rowCount > 1){
+			  
+			  boolean stillView = true;
+      	   //String personViewing = user; 
+      	  while(stillView){
+			  System.out.print("\033[H\033[2J");
+		      System.out.flush();  
+			  printMessages(list, Start);
+			  System.out.println("Please Select a Choice\n");
+      	  	  System.out.println("_________________\n");
+      	  	  if(rowCount > 10 && (list.size() - (Start+10) >= 1))
+				System.out.println("N. Next Page");
+			  if(Start >= 10)	
+				System.out.println("P. Previous Page");
+      	  	  System.out.println("E. Edit Message");
+      	  	  System.out.println("A. Add Message");
+      	  	  System.out.println("D. Delete Message");
+      	  	  System.out.println("9. Back to Message Menu");
+      	  	  
+      	  	  switch(readchar()){
+      	  	  	  case 'N': Start = Start + 10; break;
+      	  	  	  case 'P': Start = Start - 10; break;
+      	  	  	  case 'E': break;
+      	  	  	  case 'A': break;
+      	  	  	  case '9': stillView = false; break;
+      	  	  	  default : System.out.println("Unrecognized choice!"); break;
+      	  	  	  }
+			}
+		  }
+		  else{
+			  System.out.print("This Chat Has Currently No Messages\n");
+		  }
+      }
+	  catch(Exception e){
+	  	  System.err.println(e.getMessage());
+	  }
+
+   }//end 
 /*
 =================================================================================================
 =================================================================================================
