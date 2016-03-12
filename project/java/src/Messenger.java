@@ -9,6 +9,16 @@
  * Target DBMS: 'Postgres'
  *
  */
+ 
+
+ /*
+ 
+ TODO
+ ADD CHAT
+ EDIT MESSAGE
+ FIX DELETE - when delete you should go to logout menu, not have to log out
+ neat output - clearscreen
+ */
 
 
 import java.sql.DriverManager;
@@ -444,7 +454,7 @@ public class Messenger {
                    case 5: ListBlocks(esql, authorisedUser); break;
                    case 6: RemoveBlocked(esql, authorisedUser); break;
                    case 7: MessageMenu(esql, authorisedUser); break;
-                   case 8: DeleteAccount(esql, authorisedUser); break;
+                   case 8: DeleteAccount(esql, authorisedUser); usermenu=false; break;
                    //case 3: NewMessage(esql); break;
                    case 9: usermenu = false; break;
                    default : System.out.println("Unrecognized choice!"); break;
@@ -642,20 +652,40 @@ BEGINNING OF IMPLEMENTATION
       	  
       	  String query = String.format("select count(1) from usr where login = '%s' and password = '%s'", login, password);
       	  String returnval = esql.executeQueryString(query);
-      	  
-      	  if(returnval.isEmpty()){
-      	  	  System.out.println("ARE YOU SURE YOU WANT TO DELETE THIS ACCOUNT ('yes' or 'no')\n");
+      	  System.out.println(returnval);
+
+      	  int i = Integer.parseInt(returnval);
+
+      	  if(i > 0){
+      	  	  System.out.println("ARE YOU SURE YOU WANT TO DELETE THIS ACCOUNT ('yes' or 'no')");
       	  	  String action = in.readLine();
       	  	  String yes = "yes";
-      	  	  if(action == yes){
-				System.out.println("DELETING ACCOUNT\n");
-				String delQuery = String.format("DELETE FROM USR WHERE login = '%s'");
+
+      	  	  String check1 = String.format("select count(1) from chat where init_sender = '%s'", login);
+      	  	  String check2 = String.format("select count(1) from chat_list where member = '%s'", login);
+
+      	  	  String check1return = esql.executeQueryString(check1);
+      	  	  String check2return = esql.executeQueryString(check2);
+
+      	  	  System.out.println("match?");
+      	  	  System.out.println(check1return);
+      	  	  System.out.println(check2return);
+
+      	  	  int j = Integer.parseInt(check1return);
+      	  	  int k = Integer.parseInt(check2return);
+
+      	  	  //if yes, account exists and isnt associated with anything 
+      	  	  if((action.equals("yes")) && (j==0 && k==0)){
+      	  	  	  System.out.println("DELETING ACCOUNT\n");
+      	  	  	  String delQuery = String.format("delete from usr where login = '%s'", login);
+      	  	  	  esql.executeUpdate(delQuery);
+      	  	  	  String confirm = String.format("%s account was deleted", login);
+      	  	  	  System.out.println(confirm);
       	  	  }
+      	  	  //else there was association
       	  	  else
       	  	  	  System.out.println("Account was not deleted...Returning to main menu");
       	  }
-      	  else
-      	  	  System.out.println(returnval);
       	}
       	catch(Exception e){
       		System.out.println(e.getMessage());
@@ -1217,7 +1247,6 @@ FIXME  not chronological order displayed
 		 System.err.println(e.getMessage());
 	} 
    }
-  
 
 /*
 =================================================================================================
