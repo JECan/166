@@ -1119,7 +1119,7 @@ BEGINNING OF IMPLEMENTATION
       	  	  	  case 'N': Start = Start + 10; break;
       	  	  	  case 'P': Start = Start - 10; break;
       	  	  	  case 'E': break;
-      	  	  	  case 'A': break;
+      	  	  	  case 'A': addMessage(list, esql, chatviewer); break;
       	  	  	  case 'D': deleteMessage(list, esql, chatviewer); break;
       	  	  	  case '9': stillView = false; break;
       	  	  	  default : System.out.println("Unrecognized choice!"); break;
@@ -1157,6 +1157,31 @@ BEGINNING OF IMPLEMENTATION
       return input;
    }//end readChoice
  
+
+   public static void addMessage(Vector<message> list, Messenger esql, String user){
+
+	  try{
+	  	  /*
+FIX ME HARDCODED CHATID
+FIXME  not chronological order displayed
+
+	  	  */
+		  int HARDMESSAGE = 60000;
+		  message val = list.get(0);
+		  String chatviewer = user;
+		  System.out.println("Enter message");
+		  String text = in.readLine();
+		  int Start = 0;
+		  String query = String.format("insert into message(msg_id, msg_text, msg_timestamp, sender_login, chat_id) values(%s,'%s', current_timestamp, '%s', %s)", HARDMESSAGE, text,  user, val.cId); 
+		  esql.executeUpdate(query);
+		  System.out.println("Message has been Added");
+	   }
+		catch(Exception e){
+			 System.err.println(e.getMessage());
+		} 
+   }
+ 
+
    public static void DeleteMessage(Messenger esql, int mId, String user){
 	  try{
 		  String chatviewer = user;
