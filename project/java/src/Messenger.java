@@ -12,12 +12,12 @@
  
 
  /*
- 
+ lines 1170-1251 are the ones i implemented - addmessage and deletemessage
  TODO
  ADD CHAT
  EDIT MESSAGE
- FIX DELETE - when delete you should go to logout menu, not have to log out
- neat output - clearscreen
+ FIX DELETE - when delete you should go to login menu, not have to log out
+ FIX ADDMESSAGE - hardcoded initial values msg_id, need to change value and recompile everytime we add message
  */
 
 
