@@ -895,7 +895,9 @@ BEGINNING OF IMPLEMENTATION
 		  String chatviewer = user;
 		  //String display;
 		  int Start = 0;
-		  String query = String.format("delete from chat where chat_id = %s and init_sender = '%s'", chat_id, chatviewer);
+		  String query = String.format("delete from chat_list where chat_id = %s ", chat_id);
+		  esql.executeUpdate(query);
+		  query = String.format("delete from chat where chat_id = %s ", chat_id);
 		  esql.executeUpdate(query);
 		  System.out.println("Chat has been Deleted");
 	   }
@@ -1118,6 +1120,7 @@ BEGINNING OF IMPLEMENTATION
       	  	  	  case 'P': Start = Start - 10; break;
       	  	  	  case 'E': break;
       	  	  	  case 'A': break;
+      	  	  	  case 'D': deleteMessage(list, esql, chatviewer); break;
       	  	  	  case '9': stillView = false; break;
       	  	  	  default : System.out.println("Unrecognized choice!"); break;
       	  	  	  }
@@ -1132,6 +1135,65 @@ BEGINNING OF IMPLEMENTATION
 	  }
 
    }//end 
+
+      public static int readMsgNum() {
+      int input;
+      // returns only if a correct value is given.
+      do {
+         System.out.print("Enter Message #: ");
+         try { // read the integer, parse it and break.
+            input = Integer.parseInt(in.readLine());
+            if (input > 9){
+				System.out.println("Your input needs to be from 0-9");
+				continue;
+			}
+			else
+				break;
+         }catch (Exception e) {
+            System.out.println("Your input is invalid!");
+            continue;
+         }//end try
+      }while (true);
+      return input;
+   }//end readChoice
+ 
+   public static void DeleteMessage(Messenger esql, int mId, String user){
+	  try{
+		  String chatviewer = user;
+		  //String display;
+		  int Start = 0;
+		  String query = String.format("delete from message where msg_id = %s ", mId);
+		  esql.executeUpdate(query);
+		  System.out.println("Message has been Deleted");
+	   }
+		catch(Exception e){
+			 System.err.println(e.getMessage());
+		} 
+   }
+   
+   public static void deleteMessage(Vector<message> list, Messenger esql, String user){
+	   try{
+	   int id = readMsgNum();
+	   message val = list.get(id);
+	   System.out.print("Are you sure you want to delete message " + id + ": ");
+	   String confirmation = in.readLine();
+	   if(confirmation.equals("Yes") || confirmation.equals("yes")){
+		   if(user.equals(val.sender)){
+				DeleteMessage(esql, val.mId, val.sender);
+		   }
+		   else{
+			   System.out.println("You cannot delete this message because you are not the owner");
+			   System.out.println("The Owner is: " + val.sender);
+			   //System.out.println("You are: " + val.sender);
+		   }
+	   }
+	}
+	catch(Exception e){
+		 System.err.println(e.getMessage());
+	} 
+   }
+  
+
 /*
 =================================================================================================
 =================================================================================================
