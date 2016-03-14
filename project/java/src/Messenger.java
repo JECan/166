@@ -14,10 +14,10 @@
  /*
  lines 1170-1251 are the ones i implemented - addmessage and deletemessage
  TODO
- ADD CHAT
+ FIXED --ADD CHAT
  EDIT MESSAGE
  FIX DELETE - when delete you should go to login menu, not have to log out
- FIX ADDMESSAGE - hardcoded initial values msg_id, need to change value and recompile everytime we add message
+ FIXED --FIX ADDMESSAGE - hardcoded initial values msg_id, need to change value and recompile everytime we add message
  */
 
 
@@ -71,6 +71,18 @@ public class Messenger {
         }
     }
     
+    public class contacts{
+        public int id = 0;
+        public String login = "";
+        public String selected = "";
+
+        public contacts(int i, String user, String select){
+            id = i;
+            login = user;
+            selected = select;
+        }
+    }
+
     public class chat{
         public int id = 0;
         public int chat_id = 0;
@@ -219,7 +231,7 @@ public class Messenger {
        */
       ResultSetMetaData rsmd = rs.getMetaData ();
       int numCol = rsmd.getColumnCount ();
-      int rowCount = 0;
+      int rowCount = list.size();
       int id = 0;
       int cid = 0;
       int mid = 0;
@@ -249,8 +261,39 @@ public class Messenger {
       stmt.close ();
       return rowCount;
    }//end executeQuery
-   
-   
+
+   public int get_contact(String query, Vector<contacts> list) throws SQLException {
+      // creates a statement object
+      Statement stmt = this._connection.createStatement ();
+
+      // issues the query instruction
+      ResultSet rs = stmt.executeQuery (query);
+
+      /*
+       ** obtains the metadata object for the returned result set.  The metadata
+       ** contains row and column info.
+       */
+      ResultSetMetaData rsmd = rs.getMetaData ();
+      int numCol = rsmd.getColumnCount ();
+      int rowCount = 0;
+      int id = 0;
+      String member ="";
+      String select = "N";
+
+      // iterates through the result set and output them to standard out.
+      while (rs.next()){
+         id = rowCount;
+         member = rs.getString (1);
+         
+		 contacts c1 = new contacts(id, member, select);	
+            list.addElement(c1);
+            //System.out.print (rs.getString (i) + "\t");
+         //System.out.println ();
+         ++rowCount;
+      }//end while
+      stmt.close ();
+      return rowCount;
+   }//end executeQuery  
    
    public int get_message(String query, Vector<message> list) throws SQLException {
       // creates a statement object
@@ -525,7 +568,28 @@ public class Messenger {
       }while (true);
       return input;
    }//end readChoice
-   
+  
+    public static int readContactNum() {
+      int input;
+      // returns only if a correct value is given.
+      do {
+         System.out.print("Enter Contact #: ");
+         try { // read the integer, parse it and break.
+            input = Integer.parseInt(in.readLine());
+            if (input > 9){
+				System.out.println("Your input needs to be from 0-9");
+				continue;
+			}
+			else
+				break;
+         }catch (Exception e) {
+            System.out.println("Your input is invalid!");
+            continue;
+         }//end try
+      }while (true);
+      return input;
+   }
+
    public static char readchar() {
       char input;
       String input1;
@@ -908,7 +972,7 @@ BEGINNING OF IMPLEMENTATION
       	  	  
       	  	  switch(readChoice()){
       	  	  	  case 1: ViewChats(esql, user); break;
-      	  	  	  case 2: break;
+      	  	  	  case 2: CreateChat(esql, user); break;
       	  	  	  case 9: stillView = false; break;
       	  	  	  default : System.out.println("Unrecognized choice!"); break;
       	  	  	  }
@@ -919,12 +983,142 @@ BEGINNING OF IMPLEMENTATION
 	  }
 
    }//end
-   
+
+   public static void printContacts(Vector<contacts> list, int Start, boolean included){
+	   String display;
+	   String header;
+	   int end;
+	   if((Start + 10) > list.size()) 
+			end = list.size();
+	   else
+			end = (Start + 10);
+			
+	   for(int i=Start; i < end; i++){
+			if (i ==0){
+				System.out.printf("%-30.30s%n", "************************************************************************************************************************************************************************");
+				System.out.printf("%-1.1s %-3.3s %-1.1s %-15.15s %3.3s%n", "*", " #", "*"," Contact Name","*");
+				System.out.printf("%-30.30s%n", "************************************************************************************************************************************************************************");
+				//System.out.println(header);
+			}
+            if (included){
+			    contacts objs = list.get(i);
+			       if(objs.selected.equals("Y")){ 
+                    //display = String.format("  " + objs.id + "\t" + objs.chat_type + "\t" + objs.sender + "\t" + objs.msg + "\t" + objs.date + "\n");
+			        //System.out.print();
+			        //System.out.println();
+			        System.out.printf("%-1.1s %-5.5s %-1.1s %-10.10s %-1.1s%n", " ", objs.id, " ", objs.login, " ");
+                }
+            }
+            else 
+            {
+                   contacts objs = list.get(i);
+			       if(objs.selected.equals("N")){ 
+                    //display = String.format("  " + objs.id + "\t" + objs.chat_type + "\t" + objs.sender + "\t" + objs.msg + "\t" + objs.date + "\n");
+			        //System.out.print(display);
+			        //System.out.println();
+			        System.out.printf("%-1.1s %-5.5s %-1.1s %-10.10s %-1.1s%n", " ", objs.id, " ", objs.login, " ");
+                }
+            }
+	  }
+   }
+
+
+
+   public static void CreateChat(Messenger esql, String user){
+       try{
+           Vector<contacts> list = new Vector<contacts>();
+
+           String query = String.format("select list_member from user_list_contains ul, usr u where u.contact_list = ul.list_id and login = '%s'", user);
+           int rows = esql.get_contact(query, list);
+           int Start = 0;
+
+           if(rows > 0){
+                boolean stillView = true;
+      	   //String personViewing = user; 
+      	     while(stillView){
+			    printContacts(list, Start, false);
+			    System.out.println("Please Select a Choice\n");
+      	  	    System.out.println("_________________\n");
+      	  	    if(rows > 10 && (list.size() - (Start+10) >= 1))
+				    System.out.println("N. Next Page");
+			    if(Start > 10)	
+				    System.out.println("P. Previous Page");
+      	  	    System.out.println("A. Add Member");
+      	  	    System.out.println("9. Done");
+
+
+      	  	  //System.out.println(readChoice());
+      	  	    switch(readchar()){
+      	  	  	    case 'N': Start = Start + 10; break;
+      	  	  	    case 'P': Start = Start - 10; break;
+      	  	  	    case 'A': AddChatContact(esql, user, list); break;
+      	  	  	    case '9': CreateNewChat(esql, user, list); stillView = false; break;
+      	  	  	    default : System.out.println("Unrecognized choice!"); break;
+      	  	  	  }
+			}
+
+
+        }
+    }
+   	catch(Exception e){
+			 System.err.println(e.getMessage());
+		} 
+   }
+
+
+   public static void CreateNewChat(Messenger esql, String user, Vector<contacts> list){
+       try{
+            System.out.print("What type of Chat do you want this to be 'group' or 'private': ");
+            String type = in.readLine();
+            contacts val;
+            String cid = esql.executeQueryString("select nextval('chat_chat_id_seq');");
+            int id = Integer.parseInt(cid);
+
+            String query = String.format("insert into chat(chat_id, init_sender, chat_type) values(%s, '%s', '%s')", id, user, type);
+            
+            esql.executeUpdate(query);
+
+            String query2 = String.format("insert into chat_list(chat_id, member) values(%s, '%s')", id, user);
+
+            esql.executeUpdate(query2);
+
+            for(int i = 0; i < list.size(); i++){
+                val = list.get(i);
+                if(val.selected.equals("Y")){
+                    String update = String.format("insert into chat_list(chat_id, member) values(%s, '%s')", id, val.login);
+                    esql.executeUpdate(update);
+                }
+            }
+            
+            System.out.print("Your Chat has been Created Successfully");
+       }
+       catch(Exception e){
+           System.err.println(e.getMessage());
+       }
+    }
+
+   public static void AddChatContact(Messenger esql, String user, Vector<contacts> list){
+       try{
+           int i = readContactNum();
+           
+           contacts val = list.get(i);
+
+           val.selected = "Y";
+
+           list.set(i, val);
+       }
+       catch(Exception e){
+           System.err.println(e.getMessage());
+       }
+   }
+           
    public static void DeleteChat(Messenger esql, int chat_id, String user){
 	  try{
 		  String chatviewer = user;
 		  //String display;
 		  int Start = 0;
+          String delete_mess = String.format("delete from message where chat_id = %s;", chat_id);
+          esql.executeUpdate(delete_mess);
 		  String query = String.format("delete from chat_list where chat_id = %s ", chat_id);
 		  esql.executeUpdate(query);
 		  query = String.format("delete from chat where chat_id = %s ", chat_id);
@@ -994,20 +1188,27 @@ BEGINNING OF IMPLEMENTATION
       	  Vector<chat> list = new Vector<chat>();
       	  String display;
       	  int Start = 0;
-      	  String query = String.format("select trim(both ' ' from c.chat_type) as type, c.chat_id, max(m.msg_id) as id, "+
-      	                                " trim(both ' ' from substring(m.msg_text, 1, 30)) as msg, trim(both ' ' from to_char(m.msg_timestamp, "+
-      	                                " 'MM/DD/YY HH12:MI')), trim(both ' ' from m.sender_login) as s, trim(both ' ' from c.init_sender) as sender from message m, chat c, chat_list cl "+
+      	  String query = String.format("select trim(both ' ' from c.chat_type) as type, c.chat_id, (m.msg_id) as id, "+
+      	                                " trim(both ' ' from substring(m.msg_text, 1, 30)) as msg, max(trim(both ' ' from to_char(m.msg_timestamp, "+
+      	                                " 'MM/DD/YY HH12:MI'))), trim(both ' ' from m.sender_login) as s, trim(both ' ' from c.init_sender) as sender from message m, chat c, chat_list cl "+
       	                                "  where c.chat_id = m.chat_id and c.chat_id = cl.chat_id and cl.member = '%s' "+
-      	                                "  and msg_id in (select max(msg_id) from message "+
+      	                                "  and m.msg_timestamp = (select max(msg_timestamp) from message "+
       	                                "  where chat_id = c.chat_id) group by trim(both ' ' from c.chat_type),c.chat_id, "+
-      	                                "  trim(both ' ' from substring(m.msg_text, 1, 30)), trim(both ' ' from to_char(m.msg_timestamp,'MM/DD/YY HH12:MI')), "+
-      	                                "  trim(both ' ' from m.sender_login), trim(both ' ' from c.init_sender);", user);
-      	  int rowCount = esql.get_chat(query, list);
+      	                                "  trim(both ' ' from substring(m.msg_text, 1, 30)), m.msg_id, "+
+      	                                "  trim(both ' ' from m.sender_login), trim(both ' ' from c.init_sender), m.msg_timestamp order by m.msg_timestamp;", user);
+        String query2 = String.format(  " select trim(both ' ' from c.chat_type) as type, c.chat_id, -99  as id, "+
+      	                                " trim(both ' ' from substring('.........', 1, 30)) as msg, '0000000' "+
+      	                                " , 'None' as s, trim(both ' ' from c.init_sender) as sender from chat c, chat_list cl "+
+      	                                "  where  c.chat_id = cl.chat_id and cl.member = '%s' and c.chat_id not in (select distinct chat_id from message) order by chat_id;", user);
+  
+          int rowCount = esql.get_chat(query, list);
+
+          int rows = esql.get_chat(query2, list);
       	  String header;
-      	  if (rowCount > 1){
+      	  if (rowCount > 0 || rows > 0){
 			  
 			  boolean stillView = true;
-      	   //String personViewing = user; 
+      	   //String personViewing = user;
       	  while(stillView){
 			  printChats(list, Start);
 			  System.out.println("Please Select a Choice\n");
@@ -1017,20 +1218,20 @@ BEGINNING OF IMPLEMENTATION
 			  if(Start > 10)	
 				System.out.println("P. Previous Page");
       	  	  System.out.println("V. View Chat Messages");
-      	  	  System.out.println("M. View Chat Members");
-      	  	  System.out.println("C. Add Members to Chat");
-      	  	  System.out.println("A. Add Chat");
+      	  	  //System.out.println("M. View Chat Members");
+      	  	  System.out.println("A. Add Members to Chat");
+      	  	  //System.out.println("A. Add Chat");
       	  	  System.out.println("D. Delete Chat");
       	  	  System.out.println("9. Back to Message Menu");
       	  	  //System.out.println(readChoice());
       	  	  switch(readchar()){
       	  	  	  case 'N': Start = Start + 10; break;
       	  	  	  case 'P': Start = Start - 10; break;
-      	  	  	  case 'M': break;
+      	  	  	  //case 'M': break;
       	  	  	  case 'C': break;
       	  	  	  case 'V': getMessage(list, esql, user); break;
       	  	  	  case 'D': deleteChat(list, esql, chatviewer); break;
-      	  	  	  case 'A': break;
+      	  	  	  //case 'A': break;
       	  	  	  case '9': stillView = false; break;
       	  	  	  default : System.out.println("Unrecognized choice!"); break;
       	  	  	  }
@@ -1123,10 +1324,10 @@ BEGINNING OF IMPLEMENTATION
       	                                "  trim(both ' ' from m.msg_text) as msg, trim(both ' ' from to_char(m.msg_timestamp, "+
       	                                " 'MM/DD/YY HH12:MI')), trim(both ' ' from m.sender_login) as sender from message m, chat c "+
       	                                "  where c.chat_id = m.chat_id and c.chat_id = %s"+
-      	                                "  order by trim(both ' ' from to_char(m.msg_timestamp,'MM/DD/YY HH12:MI')) desc", chatID);
+      	                                "  order by msg_timestamp desc", chatID);
       	  int rowCount = esql.get_message(query, list);
       	  String header;
-      	  if (rowCount > 1){
+      	  if (rowCount > 0){
 			  
 			  boolean stillView = true;
       	   //String personViewing = user; 
@@ -1148,8 +1349,8 @@ BEGINNING OF IMPLEMENTATION
       	  	  switch(readchar()){
       	  	  	  case 'N': Start = Start + 10; break;
       	  	  	  case 'P': Start = Start - 10; break;
-      	  	  	  case 'E': break;
-      	  	  	  case 'A': addMessage(list, esql, chatviewer); break;
+      	  	  	  case 'E': editMess(esql, list, user); break;
+      	  	  	  case 'A': addMessage(list, esql, chatviewer, chatID); break;
       	  	  	  case 'D': deleteMessage(list, esql, chatviewer); break;
       	  	  	  case '9': stillView = false; break;
       	  	  	  default : System.out.println("Unrecognized choice!"); break;
@@ -1157,7 +1358,14 @@ BEGINNING OF IMPLEMENTATION
 			}
 		  }
 		  else{
+
 			  System.out.print("This Chat Has Currently No Messages\n");
+              System.out.print("Would you like to add one? 'Yes' or 'No': ");
+              String ans = in.readLine();
+
+              if(ans.equals("Yes")){
+                    addMessage(list, esql, chatviewer, chatID);
+              }
 		  }
       }
 	  catch(Exception e){
@@ -1188,7 +1396,7 @@ BEGINNING OF IMPLEMENTATION
    }//end readChoice
  
 
-   public static void addMessage(Vector<message> list, Messenger esql, String user){
+   public static void addMessage(Vector<message> list, Messenger esql, String user, int cid){
 
 	  try{
 	  	  /*
@@ -1196,13 +1404,13 @@ FIX ME HARDCODED CHATID
 FIXME  not chronological order displayed
 
 	  	  */
-		  int HARDMESSAGE = 60000;
-		  message val = list.get(0);
+		  //int HARDMESSAGE = 60000;
+		  //message val = list.get(0);
 		  String chatviewer = user;
 		  System.out.println("Enter message");
 		  String text = in.readLine();
 		  int Start = 0;
-		  String query = String.format("insert into message(msg_id, msg_text, msg_timestamp, sender_login, chat_id) values(%s,'%s', current_timestamp, '%s', %s)", HARDMESSAGE, text,  user, val.cId); 
+		  String query = String.format("insert into message( msg_text, msg_timestamp, sender_login, chat_id) values('%s', current_timestamp, '%s', %s)", text,  user, cid); 
 		  esql.executeUpdate(query);
 		  System.out.println("Message has been Added");
 	   }
@@ -1247,6 +1455,35 @@ FIXME  not chronological order displayed
 		 System.err.println(e.getMessage());
 	} 
    }
+
+   public static void editMess(Messenger esql, Vector<message> list, String user){
+       try{
+           int id = readMsgNum();
+           message val = list.get(id);
+           if(val.sender.equals(user)){
+               System.out.println("Enter Updated Message:");
+               String msg = in.readLine();
+               EditMessage(esql, user, val.mId, msg);
+           }
+           else{
+               System.out.println("You are not the owner of this message so you cannot edit");
+           }
+        }
+        catch(Exception e){
+             System.err.println(e.getMessage());
+        }
+   }
+   public static void EditMessage(Messenger esql, String user, int mid, String msg){
+        try{
+                String update = String.format("update message set msg_text = '%s' where msg_id = %s;", msg, mid);
+                esql.executeUpdate(update);
+
+                System.out.println("Message Successfully Updated");
+        }
+        catch(Exception e){
+              System.err.println(e.getMessage());
+        }
+  }
 
 /*
 =================================================================================================
