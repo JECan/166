@@ -617,7 +617,12 @@ public class Messenger {
          System.out.print("\tEnter user login: ");
          String login = in.readLine();
          System.out.print("\tEnter user password: ");
-         String password = in.readLine();
+         //String password = in.readLine();
+         Console cnsl = null;
+         cnsl = System.console();
+         char[] passString = cnsl.readPassword();
+		 String password = new String(passString);
+
          System.out.print("\tEnter user phone: ");
          String phone = in.readLine();
 
@@ -653,9 +658,13 @@ public class Messenger {
 		 
          String query = String.format("SELECT * FROM Usr WHERE login = '%s' AND password = '%s'", login, password);
          int userNum = esql.executeQuery(query);
-	 if (userNum > 0)
-		return login;
+	 if (userNum > 0){
+		    return login;
+     }
+     else{
+         System.out.println("Username or Password is incorrect");
          return null;
+      }
       }catch(Exception e){
          System.err.println (e.getMessage ());
          return null;
@@ -712,8 +721,12 @@ BEGINNING OF IMPLEMENTATION
       	  System.out.println("\nEnter login:");
       	  String login = in.readLine();
       	  System.out.println("\nEnter password:");
-      	  String password = in.readLine();
-      	  
+      	  //String password = in.readLine();
+      	  Console cnsl = null;
+          cnsl = System.console();
+          char[] passString = cnsl.readPassword();
+		  String password = new String(passString);
+
       	  String query = String.format("select count(1) from usr where login = '%s' and password = '%s'", login, password);
       	  String returnval = esql.executeQueryString(query);
       	  System.out.println(returnval);
@@ -810,7 +823,7 @@ BEGINNING OF IMPLEMENTATION
       	  String personBrowsing = user;
       	  System.out.println("Listing contacts...\n");
       	  
-      	  String query = String.format("select a.list_member as Contact from user_list_contains a, usr b, user_list c where b.contact_list = c.list_id and upper(c.list_type) = 'CONTACT' and  c.list_id = a.list_id and b.login = '%s'", personBrowsing);
+      	  String query = String.format("select a.list_member as Contact, con.status from user_list_contains a, usr b, user_list c, usr con where b.contact_list = c.list_id and upper(c.list_type) = 'CONTACT' and  c.list_id = a.list_id and a.list_member = con.login and b.login = '%s'", personBrowsing);
       	  int rowCount = esql.executeQueryAndPrintResult(query, false);
 		  System.out.println("\n");
 		  System.out.println("\n");
@@ -909,7 +922,7 @@ BEGINNING OF IMPLEMENTATION
       	  String personBrowsing = user;
       	  System.out.println("Listing blocked contacts...\n");
       	  
-      	  String query = String.format("select a.list_member from user_list_contains a, usr b, user_list c where b.block_list = c.list_id and upper(c.list_type) = 'BLOCK' and  c.list_id = a.list_id and b.login = '%s'", personBrowsing);
+      	  String query = String.format("select a.list_member, bl.status from user_list_contains a, usr b, user_list c, usr bl where b.block_list = c.list_id and upper(c.list_type) = 'BLOCK' and  c.list_id = a.list_id and bl.login = a.list_member and b.login = '%s'", personBrowsing);
       	  int rowCount = esql.executeQueryAndPrintResult(query, false);
 		  System.out.println("\n");
 		  System.out.println("\n");
@@ -962,17 +975,22 @@ BEGINNING OF IMPLEMENTATION
       	  boolean stillView = true;
       	  String personViewing = user; 
       	  while(stillView){
-			  System.out.print("\033[H\033[2J");
-		      System.out.flush(); 
+			  //System.out.print("\033[H\033[2J");
+		      //System.out.flush();
+              System.out.println("\n\n\n\n\n");
       	  	  System.out.println("Message Main Menu\n");
       	  	  System.out.println("_________________\n");
       	  	  System.out.println("1. View My Chats");
-      	  	  System.out.println("2. Create Chat");
+              System.out.println("2. Update Status");
+      	  	  System.out.println("3. Create Chat");
+              System.out.println("4. View Current Class");
       	  	  System.out.println("9. Back to main menu");
       	  	  
       	  	  switch(readChoice()){
       	  	  	  case 1: ViewChats(esql, user); break;
-      	  	  	  case 2: CreateChat(esql, user); break;
+      	  	  	  case 3: CreateChat(esql, user); break;
+                  case 2: UpdateStatus(esql, user); break;
+                  case 4: ViewStatus(esql, user); break;
       	  	  	  case 9: stillView = false; break;
       	  	  	  default : System.out.println("Unrecognized choice!"); break;
       	  	  	  }
@@ -983,6 +1001,29 @@ BEGINNING OF IMPLEMENTATION
 	  }
 
    }//end
+
+   public static void ViewStatus(Messenger esql, String user){
+       try{
+           String query = String.format("select status from usr where login = '%s';", user);
+           int rowCount = esql.executeQueryAndPrintResult(query, false);
+        }
+       catch(Exception e){
+
+      }
+    }
+
+   public static void UpdateStatus(Messenger esql, String user){
+       try{
+           System.out.print("Please Enter Your New Status: ");
+           String stat = in.readLine();
+
+           String query = String.format("update usr set status = '%s' where login = '%s';", stat, user);
+           esql.executeUpdate(query);
+        }
+       catch(Exception e){
+           
+        }
+    }
 
    public static void printContacts(Vector<contacts> list, int Start, boolean included){
 	   String display;
@@ -1343,15 +1384,17 @@ BEGINNING OF IMPLEMENTATION
 				System.out.println("P. Previous Page");
       	  	  System.out.println("E. Edit Message");
       	  	  System.out.println("A. Add Message");
+              System.out.println("M. Add Member");
       	  	  System.out.println("D. Delete Message");
       	  	  System.out.println("9. Back to Message Menu");
       	  	  
       	  	  switch(readchar()){
       	  	  	  case 'N': Start = Start + 10; break;
       	  	  	  case 'P': Start = Start - 10; break;
-      	  	  	  case 'E': editMess(esql, list, user); break;
-      	  	  	  case 'A': addMessage(list, esql, chatviewer, chatID); break;
-      	  	  	  case 'D': deleteMessage(list, esql, chatviewer); break;
+      	  	  	  case 'E': editMess(esql, list, user); stillView = false; break;
+      	  	  	  case 'A': addMessage(list, esql, chatviewer, chatID); stillView = false; break;
+      	  	  	  case 'M': addMember(esql, chatID); break;
+                  case 'D': deleteMessage(list, esql, chatviewer); break;
       	  	  	  case '9': stillView = false; break;
       	  	  	  default : System.out.println("Unrecognized choice!"); break;
       	  	  	  }
@@ -1381,11 +1424,11 @@ BEGINNING OF IMPLEMENTATION
          System.out.print("Enter Message #: ");
          try { // read the integer, parse it and break.
             input = Integer.parseInt(in.readLine());
-            if (input > 9){
-				System.out.println("Your input needs to be from 0-9");
-				continue;
-			}
-			else
+           // if (input > 9){
+			//	System.out.println("Your input needs to be from 0-9");
+			//	continue;
+		//	}
+		//	else
 				break;
          }catch (Exception e) {
             System.out.println("Your input is invalid!");
@@ -1475,7 +1518,7 @@ FIXME  not chronological order displayed
    }
    public static void EditMessage(Messenger esql, String user, int mid, String msg){
         try{
-                String update = String.format("update message set msg_text = '%s' where msg_id = %s;", msg, mid);
+                String update = String.format("update message set msg_text = '%s', msg_timestamp = current_timestamp where msg_id = %s;", msg, mid);
                 esql.executeUpdate(update);
 
                 System.out.println("Message Successfully Updated");
@@ -1484,6 +1527,22 @@ FIXME  not chronological order displayed
               System.err.println(e.getMessage());
         }
   }
+
+  public static void addMember(Messenger esql, int cid){
+      try{
+          System.out.print("Please Enter the Username to be added: ");
+          String login = in.readLine();
+
+          String query = String.format("insert into chat_list(chat_id, member) values(%s, '%s');", cid, login);
+
+          esql.executeUpdate(query);
+          
+          System.out.print("Successfully Added");
+    }
+    catch(Exception e){
+
+    }
+}
 
 /*
 =================================================================================================
