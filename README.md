@@ -1,6 +1,6 @@
 Online Messaging Database System
 ====
-To initialize database go to `project/sql/scripts` directory and initialize the database with 
+This project is a terminal based messenger system based on Facebook Messenger implemented with Java and SQL.To initialize database go to `project/sql/scripts` directory and initialize the database with 
 ```
 $ ./create_db.sh
 ```
